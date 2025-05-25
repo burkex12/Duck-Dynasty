@@ -23,7 +23,7 @@ def fetch_json(url):
     return None
 
 if section == 'Team Roster':
-    st.subheader('Your Dynasty Roster')
+    st.subheader('Your Dynasty Roster (Taxi noted)')
     rosters = fetch_json(f'https://api.sleeper.app/v1/league/{LEAGUE_ID}/rosters')
     users = fetch_json(f'https://api.sleeper.app/v1/league/{LEAGUE_ID}/users')
     player_map = fetch_json('https://api.sleeper.app/v1/players/nfl')
@@ -38,10 +38,11 @@ if section == 'Team Roster':
                 break
 
     if rosters and user_id and player_map:
-        player_ids = []
+        player_ids, taxi_ids = [], []
         for r in rosters:
             if r.get('owner_id') == user_id:
                 player_ids = r.get('players', [])
+                taxi_ids = r.get('taxi', [])
                 break
         data = []
         for pid in player_ids:
@@ -50,39 +51,45 @@ if section == 'Team Roster':
                 'Name': p.get('full_name', pid),
                 'Position': p.get('position', ''),
                 'Team': p.get('team', ''),
-                'Age': p.get('age', '')
+                'Age': p.get('age', ''),
+                'Taxi': 'Yes' if pid in taxi_ids else ''
             })
         st.dataframe(pd.DataFrame(data))
     else:
         st.warning('Could not load roster or user.')
 
 elif section == 'Lineup Optimizer':
-    st.subheader('Lineup Optimizer')
-    st.write('Based on a 1QB, 2RB, 2WR, 1TE, 2FLEX format.')
+    st.subheader('Lineup Optimizer — Format: 1QB, 2RB, 3WR, 1TE, 2FLEX, 1SUPERFLEX')
     demo_lineup = [
         {'Name': 'Patrick Mahomes', 'Pos': 'QB'},
-        {'Name': 'Christian McCaffrey', 'Pos': 'RB'},
-        {'Name': 'Saquon Barkley', 'Pos': 'RB'},
-        {'Name': 'Justin Jefferson', 'Pos': 'WR'},
-        {'Name': 'CeeDee Lamb', 'Pos': 'WR'},
-        {'Name': 'Mark Andrews', 'Pos': 'TE'},
-        {'Name': 'Amon-Ra St. Brown', 'Pos': 'FLEX'},
-        {'Name': 'Bijan Robinson', 'Pos': 'FLEX'},
+        {'Name': 'Breece Hall', 'Pos': 'RB'},
+        {'Name': 'Jahmyr Gibbs', 'Pos': 'RB'},
+        {'Name': 'Garrett Wilson', 'Pos': 'WR'},
+        {'Name': 'Chris Olave', 'Pos': 'WR'},
+        {'Name': 'Drake London', 'Pos': 'WR'},
+        {'Name': 'Kyle Pitts', 'Pos': 'TE'},
+        {'Name': 'Puka Nacua', 'Pos': 'FLEX'},
+        {'Name': 'Jayden Reed', 'Pos': 'FLEX'},
+        {'Name': 'Tua Tagovailoa', 'Pos': 'SUPERFLEX'}
     ]
     st.table(pd.DataFrame(demo_lineup))
 
 elif section == 'Trade Finder':
-    st.subheader('Trade Suggestions')
-    st.write('Demo: Depth trade recommendation example')
-    st.info('You have 5 WRs and only 2 RBs. Consider trading a WR for RB depth.')
-    st.markdown('**Suggested Trade**: Courtland Sutton for James Conner')
+    st.subheader('Trade Finder — Rebuild Strategy')
+    st.write('Trade aging/prime players for youth and future picks.')
+    trades = [
+        {'Give': 'Derrick Henry', 'Get': 'Tyjae Spears + 2025 2nd'},
+        {'Give': 'Davante Adams', 'Get': 'Quentin Johnston + 2025 1st'},
+        {'Give': 'Alvin Kamara', 'Get': 'Tank Bigsby + 2025 2nd'},
+        {'Give': 'Keenan Allen', 'Get': 'Rashee Rice + 2025 1st'}
+    ]
+    st.table(pd.DataFrame(trades))
 
 elif section == 'Draft Pick Tracker':
     st.subheader('Draft Pick Ownership')
-    st.write('Demo data for 2025 picks')
     picks = [
-        {'Team': 'You', 'Round 1': 'Own', 'Round 2': 'Own', 'Round 3': 'Traded'},
-        {'Team': 'Team B', 'Round 1': 'Traded', 'Round 2': 'Own', 'Round 3': 'Own'},
-        {'Team': 'Team C', 'Round 1': 'Own', 'Round 2': 'Traded', 'Round 3': 'Own'},
+        {'Team': 'You', '2025 1st': 'Own', '2025 2nd': 'Own', '2025 3rd': 'Traded'},
+        {'Team': 'Team B', '2025 1st': 'Traded', '2025 2nd': 'Own', '2025 3rd': 'Own'},
+        {'Team': 'Team C', '2025 1st': 'Own', '2025 2nd': 'Own', '2025 3rd': 'Own'}
     ]
     st.table(pd.DataFrame(picks))
