@@ -10,9 +10,8 @@ section = st.sidebar.radio('Navigate to:', [
 
 st.title('Dynasty Football Management MVP')
 
-# Hardcoded user setup
-league_id = '918911833332760576'
-players_data = {}
+league_id = '918911833332760576'  # Hardcoded preferred league ID
+username = 'burkex12'
 
 if section == 'My Team':
     st.header('My Team')
@@ -22,17 +21,22 @@ if section == 'My Team':
         users = requests.get(f'https://api.sleeper.app/v1/league/{league_id}/users').json()
         user_id = None
         for u in users:
-            if u.get('display_name', '').lower() == 'burkex12':
-                user_id = u['user_id']
+            display = (u.get('display_name') or '').lower()
+            metadata_name = (u.get('metadata', {}).get('username') or '').lower()
+            if display == username.lower() or metadata_name == username.lower():
+                user_id = u.get('user_id')
                 break
         player_ids = []
         for r in rosters:
-            if r['owner_id'] == user_id:
+            if r.get('owner_id') == user_id:
                 player_ids = r.get('players', [])
                 break
         if player_ids:
             player_map = requests.get('https://api.sleeper.app/v1/players/nfl').json()
-            names = [f"{player_map.get(pid, {}).get('full_name', pid)} — {player_map.get(pid, {}).get('position', '')}" for pid in player_ids]
+            names = [
+                f"{player_map.get(pid, {}).get('full_name', pid)} — {player_map.get(pid, {}).get('position', '')}"
+                for pid in player_ids
+            ]
             st.success('Your team:')
             st.write(names)
         else:
