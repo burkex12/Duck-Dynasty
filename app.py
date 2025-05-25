@@ -10,11 +10,10 @@ section = st.sidebar.radio('Navigate to:', [
 
 st.title('Dynasty Football Management MVP')
 
-# Global placeholder for user and league data
-if 'league_id' not in st.session_state:
-    st.session_state['league_id'] = None
-if 'roster' not in st.session_state:
-    st.session_state['roster'] = []
+# Initialize session state
+for key in ['user_id', 'league_id', 'roster']:
+    if key not in st.session_state:
+        st.session_state[key] = None if key != 'roster' else []
 
 if section == 'Sleeper Sync':
     st.header('Sleeper Integration')
@@ -23,39 +22,40 @@ if section == 'Sleeper Sync':
         user_req = requests.get(f'https://api.sleeper.app/v1/user/{username}')
         if user_req.status_code == 200:
             user_id = user_req.json().get('user_id')
-            leagues_req = requests.get(
-                f'https://api.sleeper.app/v1/user/{user_id}/leagues/nfl/2024')
+            st.session_state['user_id'] = user_id
+            leagues_req = requests.get(f'https://api.sleeper.app/v1/user/{user_id}/leagues/nfl/2024')
             if leagues_req.status_code == 200:
                 leagues = leagues_req.json()
                 if leagues:
-                    st.session_state['league_id'] = leagues[0]['league_id']
-                    st.success(f'League synced: {leagues[0]["name"]}')
+                    league_id = leagues[0]['league_id']
+                    st.session_state['league_id'] = league_id
+                    st.success(f'Successfully synced: {leagues[0]["name"]}')
                 else:
-                    st.warning('No leagues found for this user.')
+                    st.warning('No leagues found.')
             else:
-                st.error('Failed to fetch leagues.')
+                st.error('Could not retrieve leagues.')
         else:
             st.error('Invalid Sleeper username.')
 
 elif section == 'My Team':
     st.header('My Team')
     league_id = st.session_state.get('league_id')
-    if league_id:
+    user_id = st.session_state.get('user_id')
+    if league_id and user_id:
         rosters_req = requests.get(f'https://api.sleeper.app/v1/league/{league_id}/rosters')
         if rosters_req.status_code == 200:
             rosters = rosters_req.json()
-            user_id = requests.get(f'https://api.sleeper.app/v1/league/{league_id}').json()['user_id']
             for r in rosters:
                 if r['owner_id'] == user_id:
-                    st.session_state['roster'] = r['players']
+                    st.session_state['roster'] = r.get('players', [])
                     break
         if st.session_state['roster']:
-            st.success('Your players:')
+            st.success('Your team roster:')
             st.write(st.session_state['roster'])
         else:
-            st.warning('Could not find your team in this league.')
+            st.warning('Could not match user to a team in this league.')
     else:
-        st.warning('Please sync your Sleeper account first.')
+        st.warning('Sync your Sleeper account first.')
 
 elif section == 'Dashboard':
     st.header('League Dashboard')
@@ -63,12 +63,12 @@ elif section == 'Dashboard':
 
 elif section == 'Lineup Optimizer':
     st.header('Lineup Optimizer')
-    st.write('Coming soon: Best starting lineup based on projections.')
+    st.write('Coming soon: Optimal lineup projection.')
 
 elif section == 'Trade Finder':
     st.header('Trade Finder')
-    st.write('Coming soon: Suggest trades based on team needs and values.')
+    st.write('Coming soon: Trade suggestions based on value tiers.')
 
 elif section == 'Draft Pick Tracker':
     st.header('Draft Pick Tracker')
-    st.write('Coming soon: Pick ownership across all league teams.')
+    st.write('Coming soon: Track league pick ownership.')
