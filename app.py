@@ -1,16 +1,24 @@
 import streamlit as st
 
 st.set_page_config(page_title='Dynasty Football Tool')
+
+st.sidebar.title('Navigation')
+selection = st.sidebar.radio('Go to', ['Dashboard', 'Lineup Optimizer', 'Trade Finder', 'Draft Pick Tracker'])
+
 st.title('Dynasty Football Management MVP')
 
-st.header('Lineup Optimizer')
-st.write('Optimize your lineup with projected points.')
+if selection == 'Dashboard':
+    st.header('League Dashboard')
+    st.write('Overview of your league, team summaries, and metrics.')
 
-st.header('Trade Finder')
-st.write('Find fair trades based on team needs and player value.')
+elif selection == 'Lineup Optimizer':
+    st.header('Lineup Optimizer')
+    st.write('Optimize your starting lineup based on projections (coming soon).')
 
-st.header('Draft Pick Tracker')
-st.write('Track future draft picks and ownership.')
+elif selection == 'Trade Finder':
+    st.header('Trade Finder')
+    st.write('Suggests fair trades based on roster need and player value (coming soon).')
 
-st.header('League Dashboard')
-st.write('View team summaries and performance metrics.')
+elif selection == 'Draft Pick Tracker':
+    st.header('Draft Pick Tracker')
+    st.write('Track who owns which picks and make smarter trades.')
