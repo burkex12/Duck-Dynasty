@@ -22,74 +22,83 @@ def fetch_json(url):
         return None
     return None
 
+# Load league data once
+rosters = fetch_json(f'https://api.sleeper.app/v1/league/{LEAGUE_ID}/rosters')
+users = fetch_json(f'https://api.sleeper.app/v1/league/{LEAGUE_ID}/users')
+player_map = fetch_json('https://api.sleeper.app/v1/players/nfl')
+
+user_id, my_players, taxi_ids = None, [], []
+if users:
+    for u in users:
+        display = (u.get('display_name') or '').lower()
+        uname = (u.get('metadata', {}).get('username') or '').lower()
+        if display == USERNAME.lower() or uname == USERNAME.lower():
+            user_id = u.get('user_id')
+            break
+if rosters and user_id:
+    for r in rosters:
+        if r.get('owner_id') == user_id:
+            my_players = r.get('players', [])
+            taxi_ids = r.get('taxi', [])
+            break
+
+def get_player_data(pid):
+    p = player_map.get(pid, {})
+    return {
+        'Name': p.get('full_name', pid),
+        'Position': p.get('position', ''),
+        'Team': p.get('team', ''),
+        'Age': p.get('age', ''),
+        'Taxi': 'Yes' if pid in taxi_ids else ''
+    }
+
 if section == 'Team Roster':
     st.subheader('Your Dynasty Roster (Taxi noted)')
-    rosters = fetch_json(f'https://api.sleeper.app/v1/league/{LEAGUE_ID}/rosters')
-    users = fetch_json(f'https://api.sleeper.app/v1/league/{LEAGUE_ID}/users')
-    player_map = fetch_json('https://api.sleeper.app/v1/players/nfl')
-
-    user_id = None
-    if users:
-        for u in users:
-            name = (u.get('display_name') or '').lower()
-            uname = (u.get('metadata', {}).get('username') or '').lower()
-            if name == USERNAME.lower() or uname == USERNAME.lower():
-                user_id = u.get('user_id')
-                break
-
-    if rosters and user_id and player_map:
-        player_ids, taxi_ids = [], []
-        for r in rosters:
-            if r.get('owner_id') == user_id:
-                player_ids = r.get('players', [])
-                taxi_ids = r.get('taxi', [])
-                break
-        data = []
-        for pid in player_ids:
-            p = player_map.get(pid, {})
-            data.append({
-                'Name': p.get('full_name', pid),
-                'Position': p.get('position', ''),
-                'Team': p.get('team', ''),
-                'Age': p.get('age', ''),
-                'Taxi': 'Yes' if pid in taxi_ids else ''
-            })
+    if my_players and player_map:
+        data = [get_player_data(pid) for pid in my_players]
         st.dataframe(pd.DataFrame(data))
     else:
-        st.warning('Could not load roster or user.')
+        st.warning('Roster not available.')
 
 elif section == 'Lineup Optimizer':
-    st.subheader('Lineup Optimizer — Format: 1QB, 2RB, 3WR, 1TE, 2FLEX, 1SUPERFLEX')
-    demo_lineup = [
-        {'Name': 'Patrick Mahomes', 'Pos': 'QB'},
-        {'Name': 'Breece Hall', 'Pos': 'RB'},
-        {'Name': 'Jahmyr Gibbs', 'Pos': 'RB'},
-        {'Name': 'Garrett Wilson', 'Pos': 'WR'},
-        {'Name': 'Chris Olave', 'Pos': 'WR'},
-        {'Name': 'Drake London', 'Pos': 'WR'},
-        {'Name': 'Kyle Pitts', 'Pos': 'TE'},
-        {'Name': 'Puka Nacua', 'Pos': 'FLEX'},
-        {'Name': 'Jayden Reed', 'Pos': 'FLEX'},
-        {'Name': 'Tua Tagovailoa', 'Pos': 'SUPERFLEX'}
-    ]
-    st.table(pd.DataFrame(demo_lineup))
+    st.subheader('Optimized Lineup — Format: 1QB, 2RB, 3WR, 1TE, 2FLEX, 1SUPERFLEX')
+    if my_players and player_map:
+        df = pd.DataFrame([get_player_data(pid) for pid in my_players])
+        positions = {
+            'QB': df[df['Position'] == 'QB'],
+            'RB': df[df['Position'] == 'RB'],
+            'WR': df[df['Position'] == 'WR'],
+            'TE': df[df['Position'] == 'TE'],
+        }
+        lineup = pd.concat([
+            positions['QB'].head(1),
+            positions['RB'].head(2),
+            positions['WR'].head(3),
+            positions['TE'].head(1),
+            df[~df['Position'].isin(['QB'])].head(2),
+            df.head(1)  # Superflex any
+        ])
+        st.dataframe(lineup.reset_index(drop=True))
+    else:
+        st.warning('Lineup could not be generated.')
 
 elif section == 'Trade Finder':
-    st.subheader('Trade Finder — Rebuild Strategy')
-    st.write('Trade aging/prime players for youth and future picks.')
-    trades = [
-        {'Give': 'Derrick Henry', 'Get': 'Tyjae Spears + 2025 2nd'},
-        {'Give': 'Davante Adams', 'Get': 'Quentin Johnston + 2025 1st'},
-        {'Give': 'Alvin Kamara', 'Get': 'Tank Bigsby + 2025 2nd'},
-        {'Give': 'Keenan Allen', 'Get': 'Rashee Rice + 2025 1st'}
-    ]
-    st.table(pd.DataFrame(trades))
+    st.subheader('Rebuild Strategy Trade Finder')
+    if my_players and player_map:
+        df = pd.DataFrame([get_player_data(pid) for pid in my_players])
+        aging = df[df['Age'].apply(lambda x: isinstance(x, int) and x >= 28)]
+        suggestions = pd.DataFrame([
+            {'Trade Away': row['Name'], 'Suggested Return': 'Pick or Young Player'}
+            for _, row in aging.iterrows()
+        ])
+        st.dataframe(suggestions.reset_index(drop=True))
+    else:
+        st.warning('Trade suggestions unavailable — missing roster data.')
 
 elif section == 'Draft Pick Tracker':
     st.subheader('Draft Pick Ownership')
-    picks = [
+    st.table(pd.DataFrame([
         {'Team': 'You', '2025 1st': 'Own', '2025 2nd': 'Own', '2025 3rd': 'Traded'},
         {'Team': 'Team B', '2025 1st': 'Traded', '2025 2nd': 'Own', '2025 3rd': 'Own'},
         {'Team': 'Team C', '2025 1st': 'Own', '2025 2nd': 'Own', '2025 3rd': 'Own'}
-    ]
-    st.table(pd.DataFrame(picks))
+    ]))
