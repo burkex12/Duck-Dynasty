@@ -3,7 +3,6 @@ import requests
 import json
 
 st.set_page_config(page_title='Dynasty Football Tool')
-
 st.sidebar.title('Dynasty Toolkit')
 debug_mode = st.sidebar.checkbox('Debug Mode')
 section = st.sidebar.radio('Navigate to:', [
@@ -12,7 +11,7 @@ section = st.sidebar.radio('Navigate to:', [
 
 st.title('Dynasty Football Management MVP')
 
-league_id = '918911833332760576'
+league_id = '1181770802822885376'
 username = 'burkex12'
 
 def fetch_json(url):
@@ -30,7 +29,6 @@ def fetch_json(url):
 if section == 'My Team':
     st.header('My Team')
     st.write('Loading your real roster from Sleeper...')
-
     rosters = fetch_json(f'https://api.sleeper.app/v1/league/{league_id}/rosters')
     users = fetch_json(f'https://api.sleeper.app/v1/league/{league_id}/users')
     player_map = fetch_json('https://api.sleeper.app/v1/players/nfl')
