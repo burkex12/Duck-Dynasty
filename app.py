@@ -2,51 +2,42 @@ import streamlit as st
 import requests
 import json
 
-st.set_page_config(page_title='Dynasty Football Tool')
-st.sidebar.title('Dynasty Toolkit')
-debug_mode = st.sidebar.checkbox('Debug Mode')
+st.set_page_config(page_title='Dynasty Football Tool', layout='wide', initial_sidebar_state='expanded')
+st.markdown('<style>body { font-family: "Segoe UI", sans-serif; } .block-container { padding-top: 2rem; }</style>', unsafe_allow_html=True)
+st.sidebar.title('Dynasty Football Dashboard')
 section = st.sidebar.radio('Navigate to:', [
-    'My Team', 'Lineup Optimizer', 'Trade Finder', 'Draft Pick Tracker']
+    'Team Roster', 'Lineup Optimizer', 'Trade Finder', 'Draft Pick Tracker']
 )
 
-st.title('Dynasty Football Management MVP')
+st.title('Dynasty Football Management')
+st.caption('Powered by Sleeper API | Built for League ID: 1181770802822885376')
 
-league_id = '1181770802822885376'
-username = 'burkex12'
+LEAGUE_ID = '1181770802822885376'
+USERNAME = 'burkex12'
 
 def fetch_json(url):
     try:
-        response = requests.get(url)
-        if response.status_code == 200:
-            return response.json()
-        else:
-            st.error(f'Failed to fetch from {url} — Status {response.status_code}')
-            return None
-    except Exception as e:
-        st.error(f'Exception fetching {url}: {e}')
+        res = requests.get(url)
+        if res.status_code == 200:
+            return res.json()
+        return None
+    except:
         return None
 
-if section == 'My Team':
-    st.header('My Team')
-    st.write('Loading your real roster from Sleeper...')
-    rosters = fetch_json(f'https://api.sleeper.app/v1/league/{league_id}/rosters')
-    users = fetch_json(f'https://api.sleeper.app/v1/league/{league_id}/users')
+if section == 'Team Roster':
+    st.subheader('Your Dynasty Team')
+    rosters = fetch_json(f'https://api.sleeper.app/v1/league/{LEAGUE_ID}/rosters')
+    users = fetch_json(f'https://api.sleeper.app/v1/league/{LEAGUE_ID}/users')
     player_map = fetch_json('https://api.sleeper.app/v1/players/nfl')
-
-    if debug_mode:
-        st.subheader('Debug Output')
-        st.code(json.dumps({'users': users, 'rosters': rosters}, indent=2))
 
     user_id = None
     if users:
         for u in users:
             display = (u.get('display_name') or '').lower()
-            meta_name = (u.get('metadata', {}).get('username') or '').lower()
-            if display == username.lower() or meta_name == username.lower():
+            meta = (u.get('metadata', {}).get('username') or '').lower()
+            if display == USERNAME.lower() or meta == USERNAME.lower():
                 user_id = u.get('user_id')
                 break
-    else:
-        st.error('User list was empty or unavailable.')
 
     player_ids = []
     if rosters and user_id:
@@ -59,21 +50,21 @@ if section == 'My Team':
                 f"{player_map.get(pid, {}).get('full_name', pid)} — {player_map.get(pid, {}).get('position', '')}"
                 for pid in player_ids
             ]
-            st.success('Your team:')
+            st.success('Your current roster:')
             st.write(names)
-        elif not player_ids:
-            st.warning('No players found for your roster.')
-    elif not user_id:
-        st.error('Your user ID could not be determined from the league.')
+        else:
+            st.warning('No player data found.')
+    else:
+        st.warning('Unable to load user or roster info.')
 
 elif section == 'Lineup Optimizer':
-    st.header('Lineup Optimizer')
-    st.write('Coming soon: Optimal lineup projection.')
+    st.subheader('Lineup Optimizer')
+    st.info('Coming soon: Your optimal weekly starters based on projections.')
 
 elif section == 'Trade Finder':
-    st.header('Trade Finder')
-    st.write('Coming soon: Trade suggestions based on value tiers.')
+    st.subheader('Trade Finder')
+    st.info('Coming soon: Explore fair trades based on team needs.')
 
 elif section == 'Draft Pick Tracker':
-    st.header('Draft Pick Tracker')
-    st.write('Coming soon: Track league pick ownership.')
+    st.subheader('Draft Pick Tracker')
+    st.info('Coming soon: Full draft pick ownership and tracking.')
