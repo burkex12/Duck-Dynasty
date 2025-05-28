@@ -34,9 +34,10 @@ if tab == "Team Roster":
 elif tab == "Lineup Optimizer":
     st.subheader("📈 Lineup Optimizer")
     st.markdown("**Optimal Lineup Based on League Settings (3 WR, 2 FLEX, 1 SUPERFLEX):**")
-    st.success("QB: Patrick Mahomes
-WR: Cooper Kupp
-FLEX: Tyrone Tracy")
+    st.success("Optimal Lineup:")
+    st.text("QB: Patrick Mahomes")
+    st.text("WR: Cooper Kupp")
+    st.text("FLEX: Tyrone Tracy")
 
 elif tab == "Trade Finder":
     st.subheader("🔁 Trade Finder")
@@ -50,10 +51,10 @@ elif tab == "Trade Finder":
 elif tab == "Draft Picks":
     st.subheader("📊 Draft Pick Tracker")
     st.markdown("**Your Draft Capital:**")
-    st.write("- 2025 1st (Own)
-- 2025 2nd (Own)
-- 2026 1st (Traded)
-- 2026 3rd (Own)")
+    st.write("- 2025 1st (Own)")
+    st.write("- 2025 2nd (Own)")
+    st.write("- 2026 1st (Traded)")
+    st.write("- 2026 3rd (Own)")
 
 elif tab == "Waiver Assistant":
     st.subheader("📥 Waiver Wire Assistant")
